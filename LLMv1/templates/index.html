@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Flask App</title>
+    <style>
+      body {
+        background-color: #fff;
+        font-family: Calibri, sans-serif;
+      }
+      #form-container {
+        width: 60%;
+        margin: 0 auto;
+        text-align: center;
+        margin-bottom: 40px;
+      }
+      #image-container {
+        width: 60%;
+        margin: 0 auto;
+        text-align: center;
+        margin-bottom: 40px;
+      }
+      label {
+        display: block;
+        margin-bottom: 10px;
+        font-size: 18px;
+        font-weight: bold;
+      }
+      input[type=text] {
+        padding: 10px;
+        border-radius: 5px;
+        border: none;
+        width: 100%;
+        height: 50px;
+        box-sizing: border-box;
+        background-color: #f7f7f7;
+        font-family: Calibri, sans-serif;
+        font-size: 16px;
+        transition: all 0.2s ease-in-out;
+      }
+      #api_key {
+        border-top-left-radius: 5px;
+        border-top-right-radius: 5px;
+      }
+      #prompt {
+        border-bottom-left-radius: 5px;
+        border-bottom-right-radius: 5px;
+      }
+      #plot-img {
+      display: block;
+      margin: 0 auto;
+      margin-top: 20px;
+      }
+      button[type=submit] {
+        background-color: #eee;
+        border: none;
+        color: #000;
+        padding: 10px 20px;
+        text-align: center;
+        text-decoration: none;
+        display: inline-block;
+        font-size: 24px;
+        font-weight: bold;
+        margin-top: 20px;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: all 0.2s ease-in-out;
+      }
+      button[type=submit]:hover {
+        background-color: #fff;
+        border: none;
+        color: #000;
+        padding: 10px 20px;
+        text-align: center;
+        text-decoration: none;
+        display: inline-block;
+        font-size: 24px;
+        font-weight: bold;
+        margin-top: 20px;
+        border-radius: 5px;
+        cursor: pointer;
+        box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+      }
+      .checkbox {
+        display: inline-block;
+        margin-left: 5px;
+        font-size: 14px;
+      }
+      .hide {
+        -webkit-text-security: disc;
+        -moz-text-security: disc;
+        text-security: disc;
+        height: 50px; 
+      }
+      
+    </style>
+  </head>
+  <body>
+    <div id="form-container">
+      <form method="POST" action="/submit">
+        <label for="api_key" style="font-size: 24px; margin-bottom: 20px;">API Key</label>
+        <div>
+          <input type="text" id="api_key" name="api_key" value="{{ request.form['api_key']|default('') }}" onFocus="if(this.value=='Enter your API key here...')this.value='';" onBlur="if(this.value=='')this.value='Enter your API key here...';">
+          <input type="checkbox" class="checkbox" onclick="togglePassword()"> Hide
+        </div>
+        <br>
+
+        <label for="prompt" style="font-size: 24px; margin-bottom: 20px;">Prompt</label>
+        <input type="text" id="prompt" name="prompt" value="{{ request.form['prompt']|default('') }}" onFocus="if(this.value=='Enter your prompt here...')this.value='';" onBlur="if(this.value=='')this.value='Enter your prompt here...';"><br>
+
+        <button type="submit">Submit</button>
+      </form>
+    </div>
+    <div id="image-container">
+      {% if plot_data %}
+      <img src="data:image/png;base64,{{ plot_data }}" alt="Plot">
+      {% endif %}
+    </div>
+
+    <iframe src="notebook.html" width="100%" height="600px"></iframe>
+
+    <script>
+      function togglePassword() {
+        var x = document.getElementById("api_key");
+        x.classList.toggle("hide");
+        x.focus();
+      }
+    </script>
+  </body>
+</html>

@@ -1,0 +1,33 @@
+<!-- index.html -->
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Matplotlib Visualization</title>
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+	<script type="text/javascript">
+		$(document).ready(function() {
+			$("#submit-btn").click(function() {
+				var prompt = $("#prompt-field").val();
+				$.ajax({
+					type: "POST",
+					url: "/generate-visualization",
+					data: {prompt: prompt},
+					success: function(response) {
+						$("#visualization").html(response);
+					},
+					error: function(xhr, status, error) {
+						console.error(error);
+					}
+				});
+			});
+		});
+	</script>
+</head>
+<body>
+	<h1>Matplotlib Visualization Generator</h1>
+	<label for="prompt-field">Enter a prompt:</label>
+	<input type="text" id="prompt-field" name="prompt-field">
+	<button type="button" id="submit-btn">Generate Visualization</button>
+	<div id="visualization"></div>
+</body>
+</html>
