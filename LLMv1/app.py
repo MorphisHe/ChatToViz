@@ -1,3 +1,5 @@
+from message_manager import MessageManager
+
 # app.py
 from flask import Flask, render_template, request
 from io import BytesIO
@@ -8,10 +10,10 @@ import openai
 import base64
 
 app = Flask(__name__)
+message_manager = MessageManager()
 
 # Set up OpenAI API key
-openai.api_key = 'YOUR_API_KEY_HERE'
-
+openai.api_key = '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'
 # Define route for the homepage
 @app.route('/')
 def index():
@@ -24,16 +26,24 @@ def submit():
     prompt = request.form['prompt']
     api_key = request.form['api_key']
     openai.api_key = api_key
+
+    # add new message to message_history
+    message_manager.append(prompt, role="user")
+
     # Generate code using OpenAI
-    response = openai.Completion.create(
-        engine="text-davinci-002",
-        prompt=prompt,
-        max_tokens=1024,
-        n=1,
-        stop=None,
-        temperature=0.5,
+    response = openai.ChatCompletion.create(
+        model="gpt-3.5-turbo",
+        messages=message_manager.get_message_history(),
+        temperature=0,
     )
-    code = response.choices[0].text
+    response_message = response.choices[0].message.content
+    code = message_manager.get_clean_code(response_message)
+    print(response_message)
+    print("----")
+    print(code)
+    
+    # add response to message_history
+    message_manager.append(response_message, role="assistant")
 
     # Create matplotlib visualization using generated code
     matplotlib.use('Agg')
@@ -44,10 +54,8 @@ def submit():
     code_lines = [line for line in code_lines if not line.startswith('#')]
     code = '\n'.join(code_lines)
 
-    print(code[2:])
-
     # Execute modified code
-    exec(code[2:])
+    exec(code)
 
     plt.savefig('static/img/plot.png')
     plt.close()
