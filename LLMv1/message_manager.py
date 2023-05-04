@@ -54,7 +54,7 @@ class MessageManager:
         self.message_history = [
                 {"role": "system", "content": "You are a python data visualization code generator."},
                 {"role": "user", "content": "Generate the python code for the requested visualization. The input is a random sample of rows of a larger dataset.\
-                 The context shows the datatypes per column. \n"+context+"\n"}]
+                 The context shows the datatypes per column. \n"+self.context+"\n"}]
         self.regex_pattern = r"```python\n(.*?)```"
 
     def get_message_history(self):
