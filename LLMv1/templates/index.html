@@ -11,13 +11,32 @@
         width: 60%;
         margin: 0 auto;
         text-align: center;
-        margin-bottom: 40px;
       }
-      #image-container {
-        width: 60%;
-        margin: 0 auto;
-        text-align: center;
-        margin-bottom: 40px;
+      #content {
+        display: flex;
+        justify-content: center;
+      }
+      #table-container {
+        width: 40%;
+        max-height: 600px;
+        overflow-y: auto;
+        margin-left: 20px;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      th, td {
+        border: 1px solid #ccc;
+        padding: 8px;
+        text-align: left;
+      }
+      th {
+        background-color: #f2f2f2;
+        font-weight: bold;
+      }
+      tr:nth-child(even) {
+        background-color: #f2f2f2;
       }
       label {
         display: block;
@@ -30,12 +49,10 @@
         border-radius: 5px;
         border: none;
         width: 100%;
-        height: 50px;
         box-sizing: border-box;
         background-color: #f7f7f7;
         font-family: Calibri, sans-serif;
         font-size: 16px;
-        transition: all 0.2s ease-in-out;
       }
       #api_key {
         border-top-left-radius: 5px;
@@ -50,80 +67,124 @@
       margin: 0 auto;
       margin-top: 20px;
       }
-      button[type=submit] {
-        background-color: #eee;
-        border: none;
-        color: #000;
-        padding: 10px 20px;
-        text-align: center;
-        text-decoration: none;
-        display: inline-block;
-        font-size: 24px;
-        font-weight: bold;
-        margin-top: 20px;
+      .plot-and-code {
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+        gap: 20px;
+      }
+      #code-container {
+        font-family: "Courier New", monospace;
+        white-space: pre-wrap;
+        background-color: #f7f7f7;
+        border: 1px solid #ccc;
+        padding: 10px;
         border-radius: 5px;
-        cursor: pointer;
-        transition: all 0.2s ease-in-out;
-      }
-      button[type=submit]:hover {
-        background-color: #fff;
-        border: none;
-        color: #000;
-        padding: 10px 20px;
-        text-align: center;
-        text-decoration: none;
-        display: inline-block;
-        font-size: 24px;
-        font-weight: bold;
-        margin-top: 20px;
-        border-radius: 5px;
-        cursor: pointer;
-        box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
-      }
-      .checkbox {
-        display: inline-block;
-        margin-left: 5px;
-        font-size: 14px;
-      }
-      .hide {
-        -webkit-text-security: disc;
-        -moz-text-security: disc;
-        text-security: disc;
-        height: 50px; 
+        overflow: auto;
       }
       
     </style>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script> 
   </head>
   <body>
     <div id="form-container">
       <form method="POST" action="/submit">
-        <label for="api_key" style="font-size: 24px; margin-bottom: 20px;">API Key</label>
-        <div>
-          <input type="text" id="api_key" name="api_key" value="{{ request.form['api_key']|default('') }}" onFocus="if(this.value=='Enter your API key here...')this.value='';" onBlur="if(this.value=='')this.value='Enter your API key here...';">
-          <input type="checkbox" class="checkbox" onclick="togglePassword()"> Hide
-        </div>
-        <br>
+        <label for="api_key" style="font-size: 24px; margin-bottom: 20px;">API Key:</label>
+        <input type="text" id="api_key" name="api_key" value="Enter your API key here..." onFocus="if(this.value=='Enter your API key here...')this.value='';" onBlur="if(this.value=='')this.value='Enter your API key here...';"><br>
 
-        <label for="prompt" style="font-size: 24px; margin-bottom: 20px;">Prompt</label>
-        <input type="text" id="prompt" name="prompt" value="{{ request.form['prompt']|default('') }}" onFocus="if(this.value=='Enter your prompt here...')this.value='';" onBlur="if(this.value=='')this.value='Enter your prompt here...';"><br>
+        <label for="prompt" style="font-size: 24px; margin-bottom: 20px;">Prompt:</label>
+        <input type="text" id="prompt" name="prompt" value="Enter your prompt here..." onFocus="if(this.value=='Enter your prompt here...')this.value='';" onBlur="if(this.value=='')this.value='Enter your prompt here...';"><br>
 
         <button type="submit">Submit</button>
       </form>
     </div>
-    <div id="image-container">
-      {% if plot_data %}
-      <img src="data:image/png;base64,{{ plot_data }}" alt="Plot">
-      {% endif %}
+    <button id="reset-btn" class="btn btn-secondary">Reset</button>
+
+    <div id="csv-upload-container">
+      <form id="csv-upload-form" method="POST" action="/upload_csv" enctype="multipart/form-data">
+        <label for="csv_file" style="font-size: 24px; margin-bottom: 20px;">Upload CSV File:</label>
+        <input type="file" id="csv_file" name="csv_file" accept=".csv">
+        <button type="button" id="upload-btn">Upload</button>
+      </form>
     </div>
-
-    <iframe src="notebook.html" width="100%" height="600px"></iframe>
-
+    <div class="plot-and-code">
+      {% if plot_data %}
+      <img id="plot-img" src="data:image/png;base64,{{ plot_data }}" alt="Plot">
+      {% endif %}
+      
+      <pre id="code-container">
+        {% if code_data %}
+        {{ code_data | safe }}
+        {% endif %}
+      </pre>
+    </div>
+    <div id="content">
+      <div id="table-container">
+        <table>
+          <thead>
+            <tr>
+              {% if csv_data %}
+              {% for header in csv_data[0].keys() %}
+              <th>{{ header }}</th>
+              {% endfor %}
+              {% endif %}
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in csv_data %}
+            <tr>
+              {% for cell in row.values() %}
+              <td>{{ cell }}</td>
+              {% endfor %}
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
     <script>
-      function togglePassword() {
-        var x = document.getElementById("api_key");
-        x.classList.toggle("hide");
-        x.focus();
-      }
+      document.getElementById("reset-btn").addEventListener("click", function () {
+          // Send a POST request to the /reset route
+          fetch('/reset', { method: 'POST' })
+              .then((response) => {
+                  if (response.ok) {
+                      // Clear the table
+                      document.getElementById("csv-table").innerHTML = "";
+                      // Clear the visualization
+                      document.getElementById("plot").src = "";
+                      // Clear the code display
+                      document.getElementById("code-display").innerHTML = "";
+                  } else {
+                      console.error("Failed to reset the visualization and data");
+                  }
+              })
+              .catch((error) => {
+                  console.error("Error:", error);
+              });
+      });
+    </script>
+    <script>
+      $("#upload-btn").on("click", function() {
+        var formData = new FormData($("#csv-upload-form")[0]);
+        $.ajax({
+          url: "/upload_csv",
+          method: "POST",
+          data: formData,
+          processData: false,
+          contentType: false,
+          success: function(data) {
+            if (data) {
+              // Update the table-container with the new table HTML
+              $("#table-container").html(data);
+            } else {
+              alert("Please upload a valid CSV file.");
+            }
+          },
+          error: function(xhr, status, error) {
+            alert("Error uploading CSV file: " + xhr.responseText);
+          }
+        });
+      });
     </script>
   </body>
 </html>
