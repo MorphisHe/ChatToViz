@@ -49,13 +49,18 @@ def processDataset(datapath):
     return context
 
 class MessageManager:
-    def __init__(self,datapath):
-        self.context = processDataset(datapath) #can input a csv file.
+    def __init__(self,datapath=None):
+        if datapath:
+            self.context = processDataset(datapath) #can input a csv file.
+            self.csv = pd.read_csv(datapath) #using it to full store csv for frontend, was confused by backend stuff, may not be necessary code - nick
+        else:
+            self.context = ''
+            self.csv = None
         self.message_history = [
                 {"role": "system", "content": "You are a python data visualization code generator."},
                 {"role": "user", "content": "Generate the python code for the requested visualization. The input is a random sample of rows of a larger dataset.\
                  The context shows the datatypes per column. \n"+self.context+"\n"}]
-        self.regex_pattern = r"```python\n(.*?)```"
+        self.regex_patterns = [r"```python\n(.*?)```", r"```\n(.*?)```"]        
 
     def get_message_history(self):
         return self.message_history
@@ -67,7 +72,10 @@ class MessageManager:
         '''
         code return by chatgpt is wrapper by ```python ```
         '''
-        return re.findall(self.regex_pattern, message, re.DOTALL)[0]
+        for pattern in self.regex_patterns:
+            result = re.findall(pattern, message, re.DOTALL)
+            if len(result):
+                return result[0]
     
     def append(self, message, role="user"):
         self.message_history.append(
@@ -76,3 +84,11 @@ class MessageManager:
                 "content": message
             }
         )
+    
+    def reset_message_history(self):
+        self.message_history = [
+        {"role": "system", "content": "You are a python data visualization code generator."},
+        {"role": "user", "content": "Generate the python code for the requested visualization. The input is a random sample of rows of a larger dataset.\
+             The context shows the datatypes per column. \n" + self.context + "\n"}
+    ]
+    
