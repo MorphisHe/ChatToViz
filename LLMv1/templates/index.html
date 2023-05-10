@@ -21,6 +21,7 @@
         max-height: 600px;
         overflow-y: auto;
         margin-left: 20px;
+        justify-content: right;
       }
       table {
         width: 100%;
@@ -54,6 +55,16 @@
         font-family: Calibri, sans-serif;
         font-size: 16px;
       }
+      input[type=password] {
+        padding: 10px;
+        border-radius: 5px;
+        border: none;
+        width: 100%;
+        box-sizing: border-box;
+        background-color: #f7f7f7;
+        font-family: Calibri, sans-serif;
+        font-size: 16px;
+      }
       #api_key {
         border-top-left-radius: 5px;
         border-top-right-radius: 5px;
@@ -69,7 +80,7 @@
       }
       .plot-and-code {
         display: flex;
-        justify-content: center;
+        justify-content: left;
         align-items: flex-start;
         gap: 20px;
       }
@@ -81,11 +92,16 @@
         padding: 10px;
         border-radius: 5px;
         overflow: auto;
+        margin-top: 100px;
       }
       .button-group {
         text-align: center;
         margin-bottom: 20px;
       }
+      .input-field {
+        width: 60%; /* Adjust the width as needed */
+      }
+
 
       .custom-btn {
         font-family: Calibri, sans-serif;
@@ -111,6 +127,43 @@
         width: auto;
         text-align: center;
       }
+      
+      #pagination {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 20px;
+        width: 100%;
+      }
+
+      #pagination button {
+          padding: 10px;
+          border-radius: 5px;
+          border: none;
+          background-color: #007bff;
+          color: #fff;
+          font-family: Calibri, sans-serif;
+          font-size: 16px;
+          cursor: pointer;
+      }
+      #pagination button:hover {
+          background-color: #0056b3;
+      }
+      #page-input {
+          padding: 10px;
+          border-radius: 5px;
+          border: none;
+          width: 100px;
+          box-sizing: border-box;
+          background-color: #f7f7f7;
+          font-family: Calibri, sans-serif;
+          font-size: 16px;
+      }
+      .hidden {
+        display: none;
+      }
+
 
 
     </style>
@@ -120,17 +173,18 @@
     <div id="form-container">
       <form id="prompt-form" method="POST" action="/submit">
         <label for="api_key" style="font-size: 24px; margin-bottom: 20px;">API Key:</label>
-        <input type="text" id="api_key" name="api_key" value="Enter your API key here..." onFocus="if(this.value=='Enter your API key here...')this.value='';" onBlur="if(this.value=='')this.value='Enter your API key here...';"><br>
+        <div style="display: flex; align-items: center;">
+          <input type="password" id="api_key" name="api_key" class="input-field" value="Enter your API key here..." onFocus="if(this.value=='Enter your API key here...')this.value='';" onBlur="if(this.value=='')this.value='Enter your API key here...';">
+          <button type="button" id="clear-api-key-btn" class="custom-btn">Clear</button><br>
+        </div>
 
         <label for="prompt" style="font-size: 24px; margin-bottom: 20px;">Prompt:</label>
-        <input type="text" id="prompt" name="prompt" value="Enter your prompt here..." onFocus="if(this.value=='Enter your prompt here...')this.value='';" onBlur="if(this.value=='')this.value='Enter your prompt here...';"><br>
+        <div style="display: flex; align-items: center;">
+          <input type="text" id="prompt" name="prompt" class="input-field" value="Enter your prompt here..." onFocus="if(this.value=='Enter your prompt here...')this.value='';" onBlur="if(this.value=='')this.value='Enter your prompt here...';">
+          <button type="button" id="clear-prompt-btn" class="custom-btn">Clear</button><br>
+        </div>
       </form>
     </div>
-
-    <div class="button-group">
-      <button id="reset-btn" class="btn btn-secondary custom-btn">Reset</button>
-    </div>
-
     <div id="csv-upload-container">
       <form id="csv-upload-form" method="POST" action="/upload_csv" enctype="multipart/form-data">
         <div class="button-group">
@@ -147,18 +201,17 @@
     
     <div class="button-group">
       <button id="submit_btn" class="custom-btn">Submit</button>
+      <button id="reset-btn" class="btn btn-secondary custom-btn">Reset</button>
     </div>
 
     <div class="plot-and-code">
-      {% if plot_data %}
-      <img id="plot-img" src="data:image/png;base64,{{ plot_data }}" alt="Plot">
-      {% endif %}
-      
-      <pre id="code-container">
-        {% if code_data %}
-        {{ code_data | safe }}
-        {% endif %}
-      </pre>
+      <img id="plot-img" src="" alt="Plot" style="display: none;">
+      <pre id="code-container" style="display: none;"></pre>
+    </div>
+    <div id="pagination">
+      <button id="prev-page-btn" class="hidden">Previous Page</button>
+      <input type="number" id="page-input" min="1" value="1" class="hidden">
+      <button id="next-page-btn" class="hidden">Next Page</button>
     </div>
     <div id="content">
       <div id="table-container">
@@ -199,37 +252,23 @@
                       // Clear the prompt input field
                       document.getElementById("prompt").value = "";
                       document.getElementById("prompt").placeholder = "Enter your prompt here...";
-                  } else {
+                      document.getElementById("page-input").value = "1"; // Reset the page number text field
+                      $("#prev-page-btn").addClass("hidden");
+                      $("#page-input").addClass("hidden");
+                      $("#next-page-btn").addClass("hidden");                    } else {
                       console.error("Failed to reset the visualization and data");
                   }
               })
               .catch((error) => {
                   console.error("Error:", error);
               });
+            $("#pagination").addClass("hidden");
       });
     </script>
     <script>
-      $("#upload-btn").on("click", function() {
-        var formData = new FormData($("#csv-upload-form")[0]);
-        $.ajax({
-          url: "/upload_csv",
-          method: "POST",
-          data: formData,
-          processData: false,
-          contentType: false,
-          success: function(data) {
-            if (data) {
-              // Update the table-container with the new table HTML
-              $("#table-container").html(data);
-            } else {
-              alert("Please upload a valid CSV file.");
-            }
-          },
-          error: function(xhr, status, error) {
-            alert("Error uploading CSV file: " + xhr.responseText);
-          }
-        });
-      });
+      $("#upload-btn").on("click", function () {
+        loadTablePage(1);
+    });        
     </script>
     <script>
       document.getElementById("prompt-form").addEventListener("submit", function() {
@@ -252,6 +291,17 @@
           // Set the value of the prompt input field
           document.getElementById("prompt").placeholder = lastPrompt;
         }
+        if (('{{ csv_data }}').length === 0) {
+          document.getElementById("prev-page-btn").addClass("hidden");
+          document.getElementById("page-input").addClass("hidden");
+          document.getElementById("next-page-btn").addClass("hidden");
+        }
+        else{
+          loadTablePage(1);
+          document.getElementById("prev-page-btn").removeClass("hidden");
+          document.getElementById("page-input").removeClass("hidden");
+          document.getElementById("next-page-btn").removeClass("hidden");
+        }
       }
     </script>
     <script>
@@ -262,7 +312,37 @@
         e.preventDefault(); // Prevent default form submission
         localStorage.setItem("api_key", document.getElementById("api_key").value);
         localStorage.setItem("last_prompt", document.getElementById("prompt").value); // Store the prompt value
-        $('#prompt-form').submit();
+        // Prepare the form data to be sent to the server
+        const formData = new FormData(document.getElementById("prompt-form"));
+        // Send the data using AJAX
+        $.ajax({
+          url: "/submit",
+          method: "POST",
+          data: formData,
+          processData: false,
+          contentType: false,
+          success: function (response) {
+            // Update the DOM with the new content (e.g., update the plot and code container)
+            // Note: You will need to update your server-side code to return a JSON object containing
+            // the necessary information to update the DOM, such as the base64-encoded plot data and the code data.
+            
+            if (response.plot_data) {
+              document.getElementById("plot-img").src = "data:image/png;base64," + response.plot_data;
+              document.getElementById("plot-img").style.display = "block";
+            }
+
+            if (response.code_data) {
+              document.getElementById("code-container").innerHTML = response.code_data;
+              document.getElementById("code-container").style.display = "block";
+            }
+
+            // Load the first page of the table
+            loadTablePage(1);
+          },
+          error: function (xhr, status, error) {
+            console.error("Error:", error);
+          },
+        });
       });
     </script>
     <script>
@@ -279,5 +359,63 @@
       });
     </script>
 
+    <script>
+      function loadTablePage(page) {
+        var formData = new FormData($("#csv-upload-form")[0]);
+        formData.append("page", page);
+        $.ajax({
+            url: "/upload_csv?page=" + page,
+            method: "POST",
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function (data) {
+                if (data) {
+                    // Update the table-container with the new table HTML
+                    $("#table-container").html(data);
+                    $("#page-input").val(page);
+                    $("#prev-page-btn").removeClass("hidden");
+                    $("#page-input").removeClass("hidden");
+                    $("#next-page-btn").removeClass("hidden");
+                } else {
+                    alert("Please upload a valid CSV file.");
+                }
+            },
+            error: function (xhr, status, error) {
+                alert("Error uploading CSV file: " + xhr.responseText);
+            }
+        });
+    }
+
+    $("#prev-page-btn").on("click", function () {
+        var currentPage = parseInt($("#page-input").val());
+        if (currentPage > 1) {
+            loadTablePage(currentPage - 1);
+        }
+    });
+
+    $("#next-page-btn").on("click", function () {
+        var currentPage = parseInt($("#page-input").val());
+        loadTablePage(currentPage + 1);
+    });
+
+    $("#page-input").on("change", function () {
+        var newPage = parseInt($(this).val());
+        if (newPage >= 1) {
+            loadTablePage(newPage);
+        }
+    });
+
+    </script>
+    <script>
+      document.getElementById("clear-api-key-btn").addEventListener("click", function () {
+        document.getElementById("api_key").value = "";
+      });
+
+      document.getElementById("clear-prompt-btn").addEventListener("click", function () {
+        document.getElementById("prompt").value = "";
+      });
+
+    </script>
   </body>
 </html>

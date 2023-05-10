@@ -3,7 +3,7 @@ from message_manager import MessageManager, processDataset
 from werkzeug.utils import secure_filename
 
 # app.py
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, jsonify
 from io import BytesIO
 import matplotlib
 import matplotlib.pyplot as plt
@@ -34,6 +34,10 @@ def reset():
 
 @app.route('/upload_csv', methods=['POST'])
 def upload_csv():
+    page = int(request.args.get('page', 1))  # Get the page parameter or default to 1
+    rows_per_page = 1000
+    start = (page - 1) * rows_per_page
+    end = start + rows_per_page
     global message_manager
     user_csv_file = request.files.get("csv_file")
     if user_csv_file and user_csv_file.filename.endswith(".csv"):
@@ -44,7 +48,8 @@ def upload_csv():
         message_manager.context = processDataset(file_path)
         message_manager.csv = pd.read_csv(file_path)
         csv_dict = message_manager.csv.to_dict(orient="records")
-        table_html = render_template('table.html', csv_data=csv_dict)
+        csv_data_cut = list(csv_dict)[start:end]  # Slice the CSV data according to the start and end index
+        table_html = render_template('table.html', csv_data=csv_data_cut)
         return table_html
     else:
         return "Invalid file format"
@@ -97,9 +102,17 @@ def submit():
 
     #for table building
     csv_dict = message_manager.csv.to_dict(orient="records")
+    code_string = code[code.find('i'):]
+
+    response_data = {
+        'plot_data': plot_b64,
+        'csv_data': csv_dict,
+        'code_data': code_string,
+    }
 
     # Return rendered template with embedded plot
-    return render_template('index.html', plot_data=plot_b64, csv_data=csv_dict, code_data=code)
+    return jsonify(response_data)
+    #return render_template('index.html', plot_data=plot_b64, csv_data=csv_dict, code_data=code_string)
 
 
 
