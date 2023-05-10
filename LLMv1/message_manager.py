@@ -42,7 +42,7 @@ def processDataset(datapath):
         contextArr.append(cDict)
     
     df = pd.read_csv(datapath)
-    df = df.sample(5)
+    df = df.sample(20)
     sample = df.to_csv(index=False)
 
     context=formatContext(contextArr,sample)
