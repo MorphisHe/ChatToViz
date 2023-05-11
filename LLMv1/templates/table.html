@@ -1,0 +1,21 @@
+<!-- table.html -->
+<table>
+    <thead>
+      <tr>
+        {% if csv_data %}
+        {% for header in csv_data[0].keys() %}
+        <th>{{ header }}</th>
+        {% endfor %}
+        {% endif %}
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in csv_data %}
+      <tr>
+        {% for cell in row.values() %}
+        <td>{{ cell }}</td>
+        {% endfor %}
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>

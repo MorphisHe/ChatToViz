@@ -1,0 +1,36 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+  <h1>Results</h1>
+
+  <div class="row">
+    <div class="col-md-6">
+      <img id="plot_img" src="{{ plot_data }}" alt="Generated plot" class="img-fluid">
+      <pre>{{ code }}</pre>
+    </div>
+    <div class="col-md-6">
+      <table id="data_table" class="table table-striped table-bordered">
+        <thead>
+          <tr>
+            {% for header in headers %}
+              <th>{{ header }}</th>
+            {% endfor %}
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in rows %}
+            <tr>
+              {% for cell in row %}
+                <td>{{ cell }}</td>
+              {% endfor %}
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <form action="/" method="get">
+    <button type="submit" class="btn btn-primary">Back</button>
+  </form>
+{% endblock %}

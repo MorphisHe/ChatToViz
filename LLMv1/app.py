@@ -1,15 +1,19 @@
-from message_manager import MessageManager
+# app.py
+from message_manager import MessageManager, processDataset
+from werkzeug.utils import secure_filename
 
 # app.py
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, jsonify
 from io import BytesIO
 import matplotlib
 import matplotlib.pyplot as plt
 import pandas as pd
 import openai
 import base64
+import os
 
 app = Flask(__name__)
+os.makedirs("temp_uploads", exist_ok=True)
 message_manager = MessageManager()
 
 # Set up OpenAI API key
@@ -18,6 +22,37 @@ openai.api_key = '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'
 @app.route('/')
 def index():
     return render_template('index.html')
+
+@app.route('/reset', methods=['POST'])
+def reset():
+    global message_manager
+    message_manager.reset_message_history()
+    # Delete the plot image if it exists
+    if os.path.exists('static/img/plot.png'):
+        os.remove('static/img/plot.png')
+    return render_template('index.html')
+
+@app.route('/upload_csv', methods=['POST'])
+def upload_csv():
+    page = int(request.args.get('page', 1))  # Get the page parameter or default to 1
+    rows_per_page = 1000
+    start = (page - 1) * rows_per_page
+    end = start + rows_per_page
+    global message_manager
+    user_csv_file = request.files.get("csv_file")
+    if user_csv_file and user_csv_file.filename.endswith(".csv"):
+        filename = secure_filename(user_csv_file.filename)
+        file_path = os.path.join("temp_uploads", filename)
+        print("File Path: " + file_path)
+        user_csv_file.save(file_path)
+        message_manager.context = processDataset(file_path)
+        message_manager.csv = pd.read_csv(file_path)
+        csv_dict = message_manager.csv.to_dict(orient="records")
+        csv_data_cut = list(csv_dict)[start:end]  # Slice the CSV data according to the start and end index
+        table_html = render_template('table.html', csv_data=csv_data_cut)
+        return table_html
+    else:
+        return "Invalid file format"
 
 # Define route for handling form submission
 @app.route('/submit', methods=['POST'])
@@ -65,10 +100,92 @@ def submit():
         plot_data = f.read()
     plot_b64 = base64.b64encode(plot_data).decode('utf-8')
 
+    #for table building
+    csv_dict = message_manager.csv.to_dict(orient="records")
+    code_string = code[code.find('i'):]
+
+    response_data = {
+        'plot_data': plot_b64,
+        'csv_data': csv_dict,
+        'code_data': code_string,
+    }
+
+    # Return rendered template with embedded plot
+    return jsonify(response_data)
+    #return render_template('index.html', plot_data=plot_b64, csv_data=csv_dict, code_data=code_string)
+
+
+
+"""
+from flask import Flask, render_template, request
+from io import BytesIO
+import matplotlib
+import matplotlib.pyplot as plt
+import pandas as pd
+import openai
+import base64
+
+app = Flask(__name__)
+
+# Set up OpenAI API key
+openai.api_key = 'YOUR_API_KEY_HERE'
+
+# Define route for the homepage
+@app.route('/')
+def index():
+    return render_template('index.html')
+
+# Define route for handling form submission
+@app.route('/submit', methods=['POST'])
+def submit():
+    # Get the prompt and API key from the form
+    prompt = request.form['prompt']
+    api_key = request.form['api_key']
+    openai.api_key = api_key
+    chat_history = {
+    "messages": [
+        {
+            "role": "user",
+            "content": prompt
+        }
+    ]
+}
+    # Generate code using OpenAI
+    print(chat_history)
+    response = openai.ChatCompletion.create(
+        model="gpt-3.5-turbo",
+        prompt=chat_history,
+        max_tokens=1024,
+        temperature=0.5,
+    )
+    code = response.choices[0].text
+
+    # Create matplotlib visualization using generated code
+    matplotlib.use('Agg')
+    fig, ax = plt.subplots()
+
+    # Remove comments from code
+    code_lines = code.split('\n')
+    code_lines = [line for line in code_lines if not line.startswith('#')]
+    code = '\n'.join(code_lines)
+
+    print(code[2:])
+
+    # Execute modified code
+    exec(code[2:])
+
+    plt.savefig('static/img/plot.png')
+    plt.close()
+
+    # Encode image as base64 for embedding in HTML
+    with open('static/img/plot.png', 'rb') as f:
+        plot_data = f.read()
+    plot_b64 = base64.b64encode(plot_data).decode('utf-8')
+
     # Return rendered template with embedded plot
     return render_template('index.html', plot_data=plot_b64)
 
-
+"""
 """
 from flask import Flask, request, render_template
 import openai
