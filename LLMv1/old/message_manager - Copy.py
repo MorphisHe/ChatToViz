@@ -1,4 +1,3 @@
-import numpy as np
 import re
 import pandas as pd
 import datamart_profiler
@@ -47,22 +46,19 @@ def processDataset(datapath):
     sample = df.to_csv(index=False)
 
     context=formatContext(contextArr,sample)
-    print(context)
     return context
 
 class MessageManager:
     def __init__(self,datapath=None):
         if datapath:
             self.context = processDataset(datapath) #can input a csv file.
-            self.csv = pd.read_csv(datapath, keep_default_na=False) #using it to full store csv for frontend, was confused by backend stuff, may not be necessary code - nick
-            self.csv = self.csv.replace("", np.nan)
-            self.csv = self.csv.dropna()
+            self.csv = pd.read_csv(datapath) #using it to full store csv for frontend, was confused by backend stuff, may not be necessary code - nick
         else:
             self.context = ''
             self.csv = None
         self.message_history = [
-                {"role": "system", "content": "You are a python data visualization code generator which uses matplotlib."},
-                {"role": "user", "content": "Generate the python function for the requested visualization which takes df as input, show the plot and saves output plot to 'static/img/plot.png'. The input is a random sample of rows of a larger dataset.\
+                {"role": "system", "content": "You are a python data visualization code generator."},
+                {"role": "user", "content": "Generate the python code for the requested visualization. The input is a random sample of rows of a larger dataset.\
                  The context shows the datatypes per column. \n"+self.context+"\n"}]
         self.regex_patterns = [r"```python\n(.*?)```", r"```\n(.*?)```"]        
 
@@ -80,16 +76,6 @@ class MessageManager:
             result = re.findall(pattern, message, re.DOTALL)
             if len(result):
                 return result[0]
-            
-    def process_code(self, clean_code):
-        code_lines = clean_code.split('\n')
-        code_lines = [line for line in code_lines if not line.startswith('#')]
-        function_header = [code_line for code_line in code_lines if "def" in code_line]
-        if len(function_header):
-            invoke_function = function_header[0].replace("def ", "").replace("df", "message_manager.csv").replace(":", "")
-            code_lines.append(invoke_function)
-        code = '\n'.join(code_lines)
-        return code
     
     def append(self, message, role="user"):
         self.message_history.append(
@@ -101,7 +87,8 @@ class MessageManager:
     
     def reset_message_history(self):
         self.message_history = [
-                {"role": "system", "content": "You are a python data visualization code generator which uses matplotlib."},
-                {"role": "user", "content": "Generate the python function for the requested visualization which takes df as input, show the plot and saves output plot to 'static/img/plot.png'. The input is a random sample of rows of a larger dataset.\
-                 The context shows the datatypes per column. \n"+self.context+"\n"}]
+        {"role": "system", "content": "You are a python data visualization code generator."},
+        {"role": "user", "content": "Generate the python code for the requested visualization. The input is a random sample of rows of a larger dataset.\
+             The context shows the datatypes per column. \n" + self.context + "\n"}
+    ]
     

@@ -11,7 +11,6 @@ import pandas as pd
 import openai
 import base64
 import os
-import numpy as np
 
 app = Flask(__name__)
 os.makedirs("temp_uploads", exist_ok=True)
@@ -47,9 +46,7 @@ def upload_csv():
         print("File Path: " + file_path)
         user_csv_file.save(file_path)
         message_manager.context = processDataset(file_path)
-        message_manager.csv = pd.read_csv(file_path, keep_default_na=False)
-        message_manager.csv = message_manager.csv.replace("", np.nan)
-        message_manager.csv = message_manager.csv.dropna()
+        message_manager.csv = pd.read_csv(file_path)
         csv_dict = message_manager.csv.to_dict(orient="records")
         csv_data_cut = list(csv_dict)[start:end]  # Slice the CSV data according to the start and end index
         table_html = render_template('table.html', csv_data=csv_data_cut)
@@ -102,7 +99,6 @@ def submit():
         plot_data = f.read()
     plot_b64 = base64.b64encode(plot_data).decode('utf-8')
 
-    code += "\n# Update the above parameter name as needed based on your CSV filename!"
     #for table building
     csv_dict = message_manager.csv.to_dict(orient="records")
     code_string = code[code.find('i'):]
