@@ -11,7 +11,6 @@ import pandas as pd
 import openai
 import base64
 import os
-import numpy as np
 
 app = Flask(__name__)
 os.makedirs("temp_uploads", exist_ok=True)
@@ -47,9 +46,7 @@ def upload_csv():
         print("File Path: " + file_path)
         user_csv_file.save(file_path)
         message_manager.context = processDataset(file_path)
-        message_manager.csv = pd.read_csv(file_path, keep_default_na=False)
-        message_manager.csv = message_manager.csv.replace("", np.nan)
-        message_manager.csv = message_manager.csv.dropna()
+        message_manager.csv = pd.read_csv(file_path)
         csv_dict = message_manager.csv.to_dict(orient="records")
         csv_data_cut = list(csv_dict)[start:end]  # Slice the CSV data according to the start and end index
         table_html = render_template('table.html', csv_data=csv_data_cut)
@@ -76,7 +73,9 @@ def submit():
     )
     response_message = response.choices[0].message.content
     code = message_manager.get_clean_code(response_message)
-
+    print(response_message)
+    print("----")
+    print(code)
     
     # add response to message_history
     message_manager.append(response_message, role="assistant")
@@ -86,10 +85,9 @@ def submit():
     fig, ax = plt.subplots()
 
     # Remove comments from code
-    code = message_manager.process_code(code)
-    print(response_message)
-    print("----")
-    print(code)
+    code_lines = code.split('\n')
+    code_lines = [line for line in code_lines if not line.startswith('#')]
+    code = '\n'.join(code_lines)
 
     # Execute modified code
     exec(code)
@@ -102,7 +100,6 @@ def submit():
         plot_data = f.read()
     plot_b64 = base64.b64encode(plot_data).decode('utf-8')
 
-    code += "\n# Update the above parameter name as needed based on your CSV filename!"
     #for table building
     csv_dict = message_manager.csv.to_dict(orient="records")
     code_string = code[code.find('i'):]

@@ -1,4 +1,3 @@
-import numpy as np
 import re
 import pandas as pd
 import datamart_profiler
@@ -43,7 +42,7 @@ def processDataset(datapath):
         contextArr.append(cDict)
     
     df = pd.read_csv(datapath)
-    df = df.sample(20)
+    df = df.sample(5)
     sample = df.to_csv(index=False)
 
     context=formatContext(contextArr,sample)
@@ -54,9 +53,7 @@ class MessageManager:
     def __init__(self,datapath=None):
         if datapath:
             self.context = processDataset(datapath) #can input a csv file.
-            self.csv = pd.read_csv(datapath, keep_default_na=False) #using it to full store csv for frontend, was confused by backend stuff, may not be necessary code - nick
-            self.csv = self.csv.replace("", np.nan)
-            self.csv = self.csv.dropna()
+            self.csv = pd.read_csv(datapath) #using it to full store csv for frontend, was confused by backend stuff, may not be necessary code - nick
         else:
             self.context = ''
             self.csv = None
