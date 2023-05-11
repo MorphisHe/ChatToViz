@@ -1,5 +1,6 @@
 # LLM Project
  LLM Project for NYU's Visualization of Machine Learning course.
+ Created by Nicholas Broome, Omar Hammami, and Jianglong He.
 
 # How to use:
 1. Install necessary libraries from requirements.txt located in the root folder
