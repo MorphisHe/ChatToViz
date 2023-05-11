@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import datamart_profiler
 import os
 
-openai.api_key = os.getenv("OPENAI_API_KEY")
+openai.api_key = ""
 def get_clean_code(message):
         '''
         code return by chatgpt is wrapper by ```python ```
@@ -64,6 +64,8 @@ def extractPromptsData(htmlPath):
 
     dfs = pd.read_html(htmlPath)
     df = dfs[1]
+    if df.shape[0] >=15:
+        df = df.sample(15)
 
     return [li.string for li in soup.find_all('li')],df
 
@@ -73,7 +75,7 @@ def generateVis(prompt,context):
         messages=[
                 {"role": "system", "content": "You are a python data visualization code generator."},
                 {"role": "user", "content": "Generate the python code for the requested visualization. The input is the dataset.\
-                 The context shows the datatypes per column. Include the dataframe definition within the code. \n"+context+"\n"},
+                 The context shows the datatypes per column. \n"+context+"\n"},
                 {"role": "user", "content": prompt}])
      
      code = codeVis.choices[0]['message']['content'] # type: ignore
@@ -96,13 +98,8 @@ def main(htmlPath):
 
 
 if __name__=="__main__":
-    p = main("nvBench/nvBench_VegaLite/VIS_2.html")
+    p = main("nvBench/nvBench_VegaLite/VIS_52.html")
+    print("NEW NEW NEW NEW NEW NEW NEW")
     for i in range(len(p)):
-        try:
-            exec(p[i])
-            print("success running code: "+prompts[i])
-        except:
-            print("error running code: "+prompts[i])
-            print(p[i])
-            print("----")
-            pass
+        print(p[i])
+        print("----")
