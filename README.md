@@ -11,6 +11,5 @@
 6. Enter a prompt to generate a visualization with the CSV data.
 7. Wait briefly, then your visualization and code should appear.
 
-
-
-     
+# Video Demo
+ https://www.youtube.com/watch?v=IJeWpn6tbF4&list=LL
